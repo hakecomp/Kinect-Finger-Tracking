@@ -261,12 +261,12 @@ namespace LightBuzz.Vitruvius.FingerTracking
 
                 if (searchForLeftHand)
                 {
-                    handLeft = GetHand(body.TrackingId, body.HandLeftState, contourLeft, angleLeft, wristLeftX, wristLeftY);
+                    handLeft = GetHand(body.TrackingId, body.HandLeftState, contourLeft, angleLeft, wristLeftX, wristLeftY,false);
                 }
 
                 if (searchForRightHand)
                 {
-                    handRight = GetHand(body.TrackingId, body.HandRightState, contourRight, angleRight, wristRightX, wristRightY);
+                    handRight = GetHand(body.TrackingId, body.HandRightState, contourRight, angleRight, wristRightX, wristRightY,true);
                 }
             }
 
@@ -294,7 +294,7 @@ namespace LightBuzz.Vitruvius.FingerTracking
             return Math.Max(distanceLeftHandTip, distanceLeftHandThumb);
         }
 
-        private Hand GetHand(ulong trackingID, HandState state, List<DepthPointEx> contour, double angle, float wristX, float wristY)
+        private Hand GetHand(ulong trackingID, HandState state, List<DepthPointEx> contour, double angle, float wristX, float wristY, bool hand)
         {
             IList<DepthPointEx> convexHull = _grahamScan.ConvexHull(contour);
             IList<DepthPointEx> filtered = _lineThinner.Filter(convexHull);
@@ -304,20 +304,45 @@ namespace LightBuzz.Vitruvius.FingerTracking
             {
                 // Hand "up".
                 fingers = filtered.Where(p => p.Y < wristY).Take(5).ToList();
+                
             }
             else if (angle >= 30.0 && angle < 90.0)
             {
-                // Thumb below wrist (sometimes).
+
                 fingers = filtered.Where(p => p.X > wristX).Take(5).ToList();
+              
+
+
+                //Console.WriteLine(aux.X);
             }
             else if (angle >= 90.0 && angle < 180.0)
             {
                 fingers = filtered.Where(p => p.Y > wristY).Take(5).ToList();
+               
             }
             else
             {
                 fingers = filtered.Where(p => p.X < wristX).Take(5).ToList();
+                
             }
+            try
+            {
+                if (hand)
+                {
+                    String aux = "LEFT HAND: " + "(" + fingers[0].X.ToString() + "," + fingers[0].Y.ToString() + ")" + "(" + fingers[1].X.ToString() + "," + fingers[1].Y.ToString() + ")"
+                    + "(" + fingers[2].X.ToString() + "," + fingers[2].Y.ToString() + ")" + "(" + fingers[3].X.ToString() + "," + fingers[3].Y.ToString() + ")" + "(" + fingers[4].X.ToString() + "," + fingers[4].Y.ToString() + ")\r";
+
+                    System.IO.File.AppendAllText(@"fingers.txt", aux);
+                }
+                else {
+                    String aux = "RIGHT HAND: " + "(" + fingers[0].X.ToString() + "," + fingers[0].Y.ToString() + ")" + "(" + fingers[1].X.ToString() + "," + fingers[1].Y.ToString() + ")"
+                    + "(" + fingers[2].X.ToString() + "," + fingers[2].Y.ToString() + ")" + "(" + fingers[3].X.ToString() + "," + fingers[3].Y.ToString() + ")" + "(" + fingers[4].X.ToString() + "," + fingers[4].Y.ToString() + ")\r";
+
+                    System.IO.File.AppendAllText(@"fingers.txt", aux);
+                }
+            }
+            catch (Exception e) { }
+
 
             if (contour.Count > 0 && fingers.Count > 0)
             {
